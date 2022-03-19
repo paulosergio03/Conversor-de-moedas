@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body> <style>
+    body {
+        font-family: "Roboto Mono", monospace;
+        font-weight: bold;
+        font-size: 20px;
+        min-height: 800px;
+        background-image: linear-gradient(#aff1fa, #07092e);
+        background-position: center bottom;
+        background-repeat: no-repeat;
+      }
+      
+      .container {
+        text-align: center;
+        padding: 20px;
+        height: 100vh;
+      }
+      
+      .page-title {
+        margin: 0 0 5px;
+      }
+      
+      .page-subtitle {
+        margin-top: 5px;
+      }
+      
+      .page-logo {
+        padding: 5px 5px 5px 9px;
+        border-radius: 5px;
+        background-color: black;
+        width: 200px;
+      }
+      
+      .textoBitcoin{
+        color: white;
+      }
+      
+      #conversao-img {
+        max-height: 200px;
+      }
+      
+      #fieldsetInput{
+        max-width: 700px;
+        position: relative;
+        left: 50%;
+        transform: translate(-50%);
+      }
+      
+      #fieldsetResposta{
+         border: 0px;
+      }
+      
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      
+      input[type="number"] {
+        -moz-appearance: textfield; /* Para o Firefox */
+      }
+      
+      fieldset {
+        border-radius: 10px;
+        border-width: 6px;
+      }
+      
+      input,
+      select {
+        margin: 4px;
+        padding: 3px;
+        border-radius: 5px;
+      }
+      
+      label {
+      }
+      
+      button {
+        margin-top: 12px;
+        padding: 4px 8px;
+        border-radius: 5px;
+        background: #ffffff;
+      }
+      
+      h2 {
+        font-size: 30px;
+      }
+    </style>
+      
+    <div class="container">
+        <h1 class="page-title">
+          Conversor de moedas
+        </h1>
+        <p class="page-subtitle">
+          Escolha as moedas para converter.
+        </p>
+        <img src="https://www.alura.com.br/assets/img/imersoes/dev-2021/logo-imersao-conversor-de-moedas.svg" class="page-logo" alt=""><br><br>
+        <fieldset id="fieldsetInput">
+          <label for="deMoeda">Converter de </label>
+          <select id="deMoeda">
+            <option selected disabled value="">Escolha</option>
+          </select>
+          <label for="paraMoeda"> para </label>
+          <select id="paraMoeda">
+            <option selected disabled value="">Escolha</option>
+          </select><br><br>
+          <label for="valor">Insira o valor:</label>
+          <input id="valor" type="number"><br>
+          <button type="submit" onclick="Converter()">Converter Valor</button>
+          <button type="submit" onclick="InverterMoedas()">Inverter Moedas</button>
+        </fieldset><br>
+      
+        <fieldset id="fieldsetResposta">
+          <h3 id="textoConversao"></h3>
+          <img src="" id="conversao-img">
+          <h3 id="textoMoedaABitcoin" class="textoBitcoin"></h3>
+          <h3 id="textoBitcoinMoedaB" class="textoBitcoin"></h3>
+        </fieldset>
+      </div>
+
+      <script>
+//Pega os elementos HTML select da moedas
+var selectMoedaA = document.getElementById("deMoeda");
+var selectMoedaB = document.getElementById("paraMoeda");
+
+//Endereços das imagens que podem   ser usadas dependendo da conversão
+var imagemSadURL = "https://i.redd.it/31m9rorrz8h41.jpg";
+var imagemShrugURL = "https://www.meme-arsenal.com/memes/091e294ad754ddf981ee679cb70f51ee.jpg";
+
+//Valor do bitcoin
+var bitcoinDolar = 47355.8;
+
+//Objeto Moeda para melhor organização do código
+class Moeda{
+  constructor (nome, plural, iso, mult){
+    this.nome = nome;
+    this.plural = plural;
+    this.iso = iso;
+    this.mult = mult;
+  }
+  
+  //Função exclusiva do objeto Moeda para verificar se a ISO (ou sigla) da moeda é a fornecida
+  temISO(iso){
+    return this.iso === iso;
+  }
+}
+
+//Array com as moedas que podem ser convertidas. Cada multiplicador (mult no objeto Moeda) foi inserido com base na cotação verdadeira do dólar americano - Cotação do dia 14/09/21
+var moedas = [
+  new Moeda("Dólar Americano", "Dólares Americanos", "USD", 1),
+  new Moeda("Dólar Canadense", "Dólares Canadenses", "CAD", 1.27),
+  new Moeda("Euro","Euros","EUR", 0.84),
+  new Moeda("Libra Esterlina","Libras Esterlinas","GBP", 0.72),
+  new Moeda("Real", "Reais", "BRL", 5.24),
+  new Moeda("Peso Argentino", "Pesos Argentinos", "ARS", 98.13),
+  new Moeda("Yuan Chinês", "Yuans Chineses", "CNY", 6.44),
+  new Moeda("Iene Japonês", "Ienes Japoneses", "JPY", 109.65),
+  new Moeda("Rublo Russo", "Rublos Russos", "RUB", 72.93),
+  new Moeda("Rúpia Indiana", "Rúpias Indianas", "INR", 73.65),
+  new Moeda("Rand Sul-africano", "Randes Sul-africanos", "ZAR", 14.33),
+  new Moeda("Bolívar Venezuelano", "Bolívares Venezuelanos", "VES", 4080269)
+];
+
+//Faz com que cada Moeda no array moedas se torne uma opção em ambos os campos HTML select
+for (var i = 0; i < moedas.length; i++) {
+  var temp1 = document.createElement("option");
+  temp1.textContent = moedas[i].nome + " (" + moedas[i].iso + ")";
+  temp1.value = moedas[i].iso;
+
+  var temp2 = document.createElement("option");
+  temp2.textContent = temp1.textContent;
+  temp2.value = temp1.value;
+
+  selectMoedaA.appendChild(temp1);
+  selectMoedaB.appendChild(temp2);
+}
+
+//Função que converte todos os valores
+function Converter() {  
+  var inputValor = document.getElementById("valor");
+      
+  //Se nenhuma moeda estiver selecionada no primeiro campo, mandar um alerta e sair da função
+  if(selectMoedaA.selectedIndex === 0){
+    alert("Escolha a moeda a ser convertida.");
+    return;
+  }
+  
+  //Se nenhuma moeda estiver selecionada no segundo campo, mandar um alerta e sair da função
+  if(selectMoedaB.selectedIndex === 0){
+    alert("Escolha a moeda para a qual deseja converter.");
+    return;
+  }
+  
+  var valor = parseFloat(inputValor.value);
+  
+  //Se o campo valor não estiver preenchido ou for um número menor que 0, mandar um alerta e sair da função
+  if(inputValor.value === "" || valor < 0){
+    alert("Insira um valor válido para ser convertido.");
+    return;
+  }
+   
+  //Pega os objetos do array usando o índice do select no HTML
+  var moedaA = moedas[selectMoedaA.selectedIndex - 1];
+  var moedaB = moedas[selectMoedaB.selectedIndex - 1];
+  
+  //Cálculos de conversão
+  var multiplicador = 1 / moedaA.mult * moedaB.mult;
+  var valorConvertido = multiplicador * valor;
+  var moedaABitcoin = (valor/(bitcoinDolar * moedaA.mult)).toFixed(20);  
+  var bitcoinMoedaB = (moedaB.mult * bitcoinDolar).toFixed(2);
+  
+  //Condições que escolhem se o nome vai ser usado no singular ou no plural e o atribui na variável, de acordo com o valor
+  var textoMoedaA = valor === 1? moedaA.nome : moedaA.plural;
+  var textoMoedaB = valorConvertido === 1? moedaB.nome : moedaB.plural;
+  
+  //Condição que conjuga o verbo valer de acordo com o valor e atribui na variável
+  var verboValerConjugado = valor === 1? "vale" : "valem";
+  
+  //Verifica se o valor é inteiro. Remove as casas decimais caso sim, e coloca duas caso não
+  valor = EhInteiro(valor)? valor.toFixed(0) : valor.toFixed(2);
+  valorConvertido = EhInteiro(valorConvertido)? valorConvertido.toFixed(0) : valorConvertido.toFixed(2);
+  
+  //Troca a imagem no corpo do HTML de acordo com as condições atendidas usando a função DecidirImagem
+  var imagem = document.getElementById("conversao-img");
+  imagem.src = DecidirImagem(moedaA.iso, moedaB.iso);
+  
+  //Forma as frases usando os valores personalizados e as insere nos elementos HTML correspondentes.
+  document.getElementById("textoConversao").innerHTML = valor + " " + textoMoedaA + " " + verboValerConjugado + " " + valorConvertido + " " + textoMoedaB + ".";
+  
+  document.getElementById("textoMoedaABitcoin").innerHTML = valor + " " + textoMoedaA + " " + verboValerConjugado + " " + moedaABitcoin + " Bitcoins.";
+  
+  document.getElementById("textoBitcoinMoedaB").innerHTML = "1 Bitcoin vale " + bitcoinMoedaB + " " + moedaB.plural + ".";
+  
+}
+
+//Função que troca de lugar as moedas na conversão
+function InverterMoedas(){
+  var temp = selectMoedaA.selectedIndex;  
+  selectMoedaA.selectedIndex = selectMoedaB.selectedIndex;
+  selectMoedaB.selectedIndex = temp;
+}
+
+//Função que decide qual imagem vai ser usada na brincadeira "secreta"
+function DecidirImagem(isoA, isoB){
+   if(isoA === isoB)
+     return imagemShrugURL;
+  
+   if(isoA === "BRL" || isoB ==="BRL"){    
+    var real;
+    var outra;
+    
+    if(isoA == "BRL"){
+      real = PegarMoedaComISO(isoA);
+      outra = PegarMoedaComISO(isoB);
+    }else{
+      real = PegarMoedaComISO(isoB);
+      outra = PegarMoedaComISO(isoA);      
+    }
+    
+    if(real.mult > outra.mult)
+      return imagemSadURL;
+  }
+  
+  return "";
+}
+
+//Função que encontra e retornar de dentro do array moedas a moeda com a ISO fornecida
+function PegarMoedaComISO(iso){
+  for(var i = 0; i < moedas.length; i++){
+    if(moedas[i].temISO(iso))
+      return moedas[i];
+  }
+  return null;
+}
+
+//Função que verifica se um valor fornecido é um número inteiro
+//Para isso ela verifica se o valor não está vazio, se ele é do tipo number e se não é um float (número real)
+function EhInteiro(valor) {
+  return !isNaN(valor) && 
+         parseInt(Number(valor)) == valor && 
+         !isNaN(parseInt(valor, 10));
+}
+
+      </script>
+
+
+</body>
+</html>
